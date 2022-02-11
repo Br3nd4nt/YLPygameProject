@@ -18,6 +18,27 @@ def load_image(name, color_key=None):
         image = image.convert_alpha()
     return image
 
+class Star(pygame.sprite.Sprite):
+
+    def __init__(self, pos, dx, dy, screen_rect, all_sprites):
+        self.fire = [load_image("star.png")]
+        for scale in (5, 10, 20):
+            self.fire.append(pygame.transform.scale(self.fire[0], (scale, scale)))
+        super().__init__(all_sprites)
+        self.screen_rect = screen_rect
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+        self.velocity = [dx, dy]
+        self.rect.x, self.rect.y = pos
+        self.gravity = 0.025
+
+    def update(self):
+        self.velocity[1] += self.gravity
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        if not self.rect.colliderect(self.screen_rect):
+            self.kill()
+
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y, size, sprites):
         super().__init__(sprites)
@@ -45,6 +66,7 @@ class Board:
     def __init__(self, n, cell_size, bombs_total, font, screen):
         self.first = True
         self.running = True
+        self.clock = pygame.time.Clock
         self.width = n
         self.height = n
         self.font = font
@@ -171,14 +193,15 @@ class Board:
         main()
 
     def game_won(self):
-        self.running = False
+        self.make_stars()
+        # self.running = False
         pygame.quit()
         main()
 
     def check_win(self):
         if self.running:
             # print(self.bombs == self.flags)
-            if self.bombs == self.flags and not self.first:
+            if self.bombs == self.flags and not self.first and sum([x.count(-1) for x in self.board]) == self.bombs_count:
                 # self.running = False
                 self.game_won()
 
@@ -189,6 +212,21 @@ class Board:
             sleep(0.333)
             pygame.display.flip()
 
+    def make_stars(self):
+        all_sprites = pygame.sprite.Group()
+        count = 0
+        for i in range(30):
+            particle_count = 20
+            numbers = range(-5, 6)
+            for _ in range(particle_count):
+                Star((random.randrange(0, self.screen.get_width()), random.randrange(0, self.screen.get_height())), random.choice(numbers), random.choice(numbers), (0, 0, self.screen.get_width(), self.screen.get_height()), all_sprites)
+        while count < 100:
+            count += 1
+            sleep(0.02)
+            self.render()
+            all_sprites.draw(self.screen)
+            all_sprites.update()
+            pygame.display.flip()
 
 class StartWindow:
     def __init__(self, size, screen, font, running = True):
@@ -273,5 +311,4 @@ def main():
         main()
 
 if __name__ == '__main__':
-    if 1:
-        main()
+    main()
